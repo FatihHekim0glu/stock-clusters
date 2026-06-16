@@ -88,10 +88,41 @@ def test_pipeline_no_gics_leaves_ari_none() -> None:
 
 @pytest.mark.unit
 def test_pipeline_default_params_run() -> None:
-    """run_cluster_analysis with no params uses defaults (auto-k, no diversification)."""
+    """run_cluster_analysis with no params uses defaults (method="both", auto-k)."""
     panel = _k_blocks_panel()
     analysis = run_cluster_analysis(panel)
     assert analysis.diversification is None
     assert analysis.stability is None
     assert analysis.gap_result is not None
-    assert analysis.selection_method == "tibshirani_1se"
+    # The default method is "both": the gap rule is the base selector and the
+    # "+both(won=...)" suffix records that both families ran and which one won.
+    assert analysis.selection_method.startswith("tibshirani_1se")
+    assert "+both(won=" in analysis.selection_method
+
+
+@pytest.mark.unit
+def test_pipeline_both_runs_both_families_and_counts_family_axis() -> None:
+    """method="both" fits BOTH families, keeps the higher-silhouette display map,
+    records the winner in selection_method, and counts the family as a DSR axis."""
+    panel = _k_blocks_panel()
+    n_clusters = 4
+
+    hier = run_cluster_analysis(
+        panel, ClusterAnalysisParams(method="hierarchical", n_clusters=n_clusters)
+    )
+    kmn = run_cluster_analysis(panel, ClusterAnalysisParams(method="kmeans", n_clusters=n_clusters))
+    both = run_cluster_analysis(panel, ClusterAnalysisParams(method="both", n_clusters=n_clusters))
+
+    # The display map kept by "both" is the higher-silhouette of the two families.
+    assert "+both(won=" in both.selection_method
+    won = "kmeans" if "won=kmeans" in both.selection_method else "hierarchical"
+    expected = kmn if won == "kmeans" else hier
+    assert both.cluster_result.silhouette == pytest.approx(expected.cluster_result.silhouette)
+    assert both.cluster_result.silhouette >= min(
+        hier.cluster_result.silhouette, kmn.cluster_result.silhouette
+    )
+
+    # Fixed k -> no gap grid -> family is the only swept axis beyond the schemes.
+    # "both" counts the family axis (2) where a single family counts 1.
+    assert both.n_trials == 2 * hier.n_trials
+    assert hier.n_trials == kmn.n_trials

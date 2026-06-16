@@ -23,6 +23,7 @@ from hypothesis import strategies as st
 from hypothesis.extra import numpy as hnp
 from sklearn.metrics import adjusted_rand_score
 
+from stockclusters import ClusterAnalysisParams, run_cluster_analysis
 from stockclusters.allocation.schemes import (
     cluster_equal_weight,
     one_over_n_weights,
@@ -223,6 +224,153 @@ def test_no_lookahead_future_perturbation_leaves_weights_unchanged() -> None:
     pre = [d for d in base_w.index if panel.index.get_loc(d) <= cutoff]
     assert pre, "expected at least one pre-cutoff rebalance"
     pd.testing.assert_frame_equal(base_w.loc[pre], pert_w.loc[pre])
+
+
+def _pre_cutoff(series: pd.Series, cutoff_date: pd.Timestamp) -> pd.Series:
+    """Return the strictly-before-cutoff slice of ``series``."""
+    return series[series.index < cutoff_date]
+
+
+def _e2e_block_panel(n_obs: int, *, seed: int) -> pd.DataFrame:
+    """A seeded 4-block-of-3 return panel (no labels — the pipeline fits them)."""
+    panel, _ = _block_panel(n_obs, seed=seed)
+    return panel
+
+
+def _run_e2e_curves(panel: pd.DataFrame, *, leaky: bool) -> dict[str, pd.Series]:
+    """Run the full pipeline horse race; return its three OOS return series.
+
+    With ``leaky=False`` the pipeline's TRAIN-ONLY per-window re-fit is used
+    (post-fix). With ``leaky=True`` a GLOBAL full-panel fit is injected by patching
+    the pipeline's per-window clusterer builder to return a callable that IGNORES
+    the train window and emits the whole-panel labels — i.e. the pre-fix look-ahead
+    leak — so the test's sensitivity can be sanity-checked.
+    """
+    from stockclusters.allocation import schemes
+    from stockclusters.clustering.hierarchical import hierarchical_clusters
+    from stockclusters.correlation.distance import mantegna_distance
+    from stockclusters.correlation.estimate import correlation_matrix
+
+    params = ClusterAnalysisParams(
+        method="hierarchical",
+        n_clusters=4,
+        run_diversification=True,
+        train_window=120,
+        cost_bps=5.0,
+        embargo_days=1,
+    )
+
+    # The pipeline imports the builder lazily FROM the schemes module, so patch it
+    # there (patching pipeline's namespace would not intercept the local import).
+    saved = schemes._default_window_clusterer
+
+    def leaky_builder(**kwargs: object) -> object:
+        corr = correlation_matrix(panel)
+        dist = mantegna_distance(corr)
+        global_labels = hierarchical_clusters(dist, n_clusters=4).labels.astype(int)
+
+        def leaky_fit(window: pd.DataFrame) -> pd.Series:
+            return global_labels.reindex(window.columns).dropna().astype(int)
+
+        return leaky_fit
+
+    try:
+        if leaky:
+            schemes._default_window_clusterer = leaky_builder  # type: ignore[assignment]
+        analysis = run_cluster_analysis(panel, params)
+    finally:
+        schemes._default_window_clusterer = saved  # type: ignore[assignment]
+
+    assert analysis.diversification is not None
+    curves = analysis.diversification.meta["oos_curves"]
+    assert isinstance(curves, dict)
+    return curves
+
+
+def _pre_cutoff_window_labels(
+    panel: pd.DataFrame, *, train_window: int, cutoff: int
+) -> list[pd.Series]:
+    """Re-fit the per-window clusterer on every pre-cutoff train window.
+
+    Reconstructs the walk-forward rebalance schedule and re-runs the SAME default
+    per-window clusterer the pipeline uses on each in-sample window whose data ends
+    at/before ``cutoff``. These are exactly the OOS-evaluated frozen labels the
+    cluster-aware arms apply on the pre-cutoff portion of the backtest.
+    """
+    from stockclusters._constants import REBALANCE_PERIODS
+    from stockclusters.allocation.schemes import _default_window_clusterer
+
+    fit = _default_window_clusterer(n_clusters=4, method="average", denoise=True)
+    n_obs = panel.shape[0]
+    gap = 1 + 1  # purge + embargo (embargo_days=1)
+    first = train_window + gap
+    step = REBALANCE_PERIODS["monthly"]
+    out: list[pd.Series] = []
+    for t in range(first, n_obs, step):
+        is_end = t - gap
+        is_start = is_end - train_window
+        if is_start < 0 or is_end > cutoff:
+            continue
+        window = panel.iloc[is_start:is_end]
+        out.append(fit(window).astype(int))
+    return out
+
+
+@pytest.mark.property
+def test_end_to_end_no_lookahead_future_perturbation() -> None:
+    """END-TO-END: future-perturbing post-cutoff rows must not change the OOS race.
+
+    This is the test the old suite was MISSING: it future-perturbs post-cutoff rows
+    of the INPUT panel and runs the FULL ``run_cluster_analysis(...,
+    run_diversification=True)`` pipeline on both. With the leak fixed (clusters
+    RE-FIT inside each walk-forward TRAIN window) the OOS-evaluated frozen labels
+    AND the pre-cutoff portion of every OOS return series are byte-identical between
+    the two runs — post-cutoff returns cannot reach back into pre-cutoff in-sample
+    clusters.
+
+    Sensitivity sanity-check (``leaky=True``): the SAME OOS-return assertion is run
+    against an injected GLOBAL full-panel fit (the pre-fix logic). It MUST trip
+    there, proving the test actually exercises the leak.
+    """
+    panel = _e2e_block_panel(700, seed=7)
+    cutoff = 500
+    cutoff_date = panel.index[cutoff]
+    train_window = 120
+
+    perturbed = panel.copy()
+    gen = np.random.default_rng(999)
+    perturbed.iloc[cutoff:] = gen.standard_normal(perturbed.iloc[cutoff:].shape) * 0.5
+
+    # --- Honest path: per-window train-only re-fit (post-fix) ---------------
+    # (1) The OOS-evaluated frozen labels on every pre-cutoff train window are
+    #     unchanged: they are a function of pre-cutoff in-sample data ONLY.
+    base_labels = _pre_cutoff_window_labels(panel, train_window=train_window, cutoff=cutoff)
+    pert_labels = _pre_cutoff_window_labels(perturbed, train_window=train_window, cutoff=cutoff)
+    assert base_labels, "expected at least one pre-cutoff train window"
+    assert len(base_labels) == len(pert_labels)
+    for lb, lp in zip(base_labels, pert_labels, strict=True):
+        pd.testing.assert_series_equal(lb, lp)
+
+    # (2) The pre-cutoff portion of every OOS return series is unchanged.
+    base_curves = _run_e2e_curves(panel, leaky=False)
+    pert_curves = _run_e2e_curves(perturbed, leaky=False)
+    for key in ("1/N", "cluster-EW", "stripped-HRP"):
+        pre_b = _pre_cutoff(base_curves[key], cutoff_date)
+        pre_p = _pre_cutoff(pert_curves[key], cutoff_date)
+        assert len(pre_b) > 0
+        pd.testing.assert_series_equal(pre_b, pre_p.reindex(pre_b.index))
+
+    # --- Sensitivity: the GLOBAL-fit leak MUST trip the same invariant -------
+    leaky_base = _run_e2e_curves(panel, leaky=True)
+    leaky_pert = _run_e2e_curves(perturbed, leaky=True)
+    tripped = False
+    for key in ("cluster-EW", "stripped-HRP"):
+        pre_b = _pre_cutoff(leaky_base[key], cutoff_date)
+        pre_p = _pre_cutoff(leaky_pert[key], cutoff_date).reindex(pre_b.index)
+        if not np.allclose(pre_b.to_numpy(), pre_p.to_numpy(), equal_nan=True):
+            tripped = True
+            break
+    assert tripped, "leaky global-fit should change pre-cutoff OOS returns (leak detector)"
 
 
 @pytest.mark.property

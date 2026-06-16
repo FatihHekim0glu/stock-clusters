@@ -157,11 +157,15 @@ The compute core guarantees, and tests enforce:
 
 1. **Metric axioms.** The Mantegna distance is non-negative, symmetric, zero on the
    diagonal, and obeys the triangle inequality (Hypothesis property test).
-2. **No-lookahead.** The correlation, RMT cutoff, distance, labels, and `k` are
-   deterministic functions of the train window — perturbing post-cutoff returns
-   leaves the train labels and the shifted weights unchanged.
-3. **Frozen-then-applied.** Clusters fit on the train window are frozen before being
-   applied to the next OOS window.
+2. **No-lookahead.** In the diversification backtest the correlation, RMT cutoff,
+   distance, labels, and (per-window) `k` are deterministic functions of each
+   walk-forward TRAIN window — clusters are RE-FIT inside every train window, never
+   reused from a full-panel fit. An end-to-end property test future-perturbs
+   post-cutoff input rows and asserts the OOS-evaluated train-only labels and the
+   pre-cutoff OOS return series are unchanged. (The full-panel display map is
+   descriptive only — figures + ARI-vs-GICS — and is never applied out-of-sample.)
+3. **Re-fit-then-applied.** Clusters fit on a train window are applied to the next
+   OOS window with purge + embargo + `shift(1)`; the next window re-fits afresh.
 4. **Identical OOS index.** All three allocators are scored on the same OOS dates;
    a property test asserts index equality before Memmel-JK runs.
 5. **Monotonic cut.** `k = N` yields singletons, `k = 1` one cluster, and a higher
@@ -170,8 +174,9 @@ The compute core guarantees, and tests enforce:
    the cophenetic distances and ARI invariant.
 7. **Determinism.** Same seed -> byte-identical phase-null surrogate, K-means
    inertia, bootstrap CI, and selected `k`.
-8. **DSR multiplicity.** `n_trials >= product of all swept axes` (linkages × `k` ×
-   schemes × denoise × cost grid); the DSR is non-increasing in `n_trials`.
+8. **DSR multiplicity.** `n_trials >= product of all swept axes` (clustering
+   families × `k` × cluster-aware schemes (2; 1/N is the fixed benchmark) × denoise
+   × cost grid); the DSR is non-increasing in `n_trials`.
 9. **Verdict safety.** The verdict cannot emit `clusters_beat_1n` while the JKM test
    is insignificant or the deflated Sharpe is non-positive (truth-table unit-tested).
 10. **Import purity.** Importing any `src/stockclusters` module triggers no I/O, no

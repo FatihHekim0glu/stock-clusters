@@ -83,8 +83,9 @@ public pipeline entrypoints the backend calls.
   metric axioms are property-tested.
 - `k` is chosen via the gap statistic vs a **phase-randomized null** (Tibshirani
   1-SE rule); silhouette and MST modularity are reported cross-checks.
-- The deflated-Sharpe `n_trials` counts the **full swept grid** (linkages × `k`
-  candidates × weighting schemes × denoise settings × cost grid).
+- The deflated-Sharpe `n_trials` counts the **full swept grid** (clustering
+  families × `k` candidates × cluster-aware weighting schemes (2) × denoise
+  settings × cost grid).
 - GICS sectors are used **post-hoc only** — never in the distance or `k`-selection.
 
 ## Validation table
@@ -129,8 +130,10 @@ otherwise:
   GICS never enters the distance or `k`-selection). The map is real and useful as a
   *diagnostic* of the universe's diversification skeleton.
 - **Cluster-aware allocation does NOT beat 1/N out-of-sample after costs.** Across
-  the full swept grid (linkages × `k` × weighting schemes × denoise × cost levels),
-  the best cluster-aware Sharpe minus the 1/N Sharpe is **not statistically
+  the full swept grid (clustering families × `k` × cluster-aware schemes × denoise ×
+  cost levels), and with clusters RE-FIT inside each walk-forward train window (no
+  look-ahead), the best cluster-aware Sharpe minus the 1/N Sharpe is **not
+  statistically
   significant** (Jobson-Korkie-Memmel `p` not significant) and the **deflated Sharpe
   is ~0** once the trial count is honestly accounted for. The headline verdict
   resolves to `no_significant_difference`.
