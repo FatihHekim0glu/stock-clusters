@@ -9,14 +9,52 @@ Importing this module has no side effects.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
 import pandas as pd
 
+from stockclusters._exceptions import InsufficientDataError, ValidationError
 from stockclusters._typing import ReturnsLike
+from stockclusters._validation import ensure_dataframe
 
 __all__ = ["StabilityResult", "rolling_stability"]
+
+#: A window clusterer maps a single in-sample returns window to an integer-label
+#: Series indexed by asset. The default builds the standard
+#: correlation -> RMT -> Mantegna-distance -> hierarchical pipeline; tests inject
+#: a deterministic clusterer so the stability layer is decoupled from it.
+WindowClusterer = Callable[[pd.DataFrame], "pd.Series"]
+
+
+def _default_clusterer(
+    *,
+    n_clusters: int,
+    method: str,
+    denoise: bool,
+) -> WindowClusterer:
+    """Build the standard per-window clusterer (lazy import of the pipeline).
+
+    NO-LOOKAHEAD: the returned callable sees only the window passed to it; it
+    estimates the correlation, optionally RMT-denoises it, maps to Mantegna
+    distance, and cuts the hierarchy at ``n_clusters`` — all within that window.
+    """
+
+    def _cluster(window: pd.DataFrame) -> pd.Series:
+        from stockclusters.clustering.hierarchical import hierarchical_clusters
+        from stockclusters.correlation.distance import mantegna_distance
+        from stockclusters.correlation.estimate import correlation_matrix
+        from stockclusters.correlation.rmt import marchenko_pastur_clip
+
+        corr = correlation_matrix(window)
+        if denoise:
+            corr = marchenko_pastur_clip(corr, n_obs=window.shape[0])
+        dist = mantegna_distance(corr)
+        result = hierarchical_clusters(dist, n_clusters=n_clusters, method=method)
+        return result.labels
+
+    return _cluster
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,6 +107,7 @@ def rolling_stability(
     step: int = 21,
     method: str = "average",
     denoise: bool = True,
+    clusterer: WindowClusterer | None = None,
 ) -> StabilityResult:
     r"""Re-fit clusters on rolling windows and summarize temporal stability.
 
@@ -94,6 +133,11 @@ def rolling_stability(
         Linkage method for the per-window clustering.
     denoise:
         Whether to RMT-denoise each window's covariance before clustering.
+    clusterer:
+        Optional window-clusterer override mapping an in-sample window to a label
+        Series. When ``None`` the standard correlation -> RMT -> Mantegna ->
+        hierarchical pipeline is used. Injecting a clusterer keeps the stability
+        layer decoupled from (and testable without) the clustering layer.
 
     Returns
     -------
@@ -103,6 +147,69 @@ def rolling_stability(
     Raises
     ------
     ValidationError
-        If ``train_window`` exceeds the available observations or ``step < 1``.
+        If ``step < 1`` or ``n_clusters < 1``.
+    InsufficientDataError
+        If ``train_window`` exceeds the available observations.
     """
-    raise NotImplementedError
+    if step < 1:
+        raise ValidationError(f"rolling_stability: step must be >= 1, got {step}.")
+    if n_clusters < 1:
+        raise ValidationError(f"rolling_stability: n_clusters must be >= 1, got {n_clusters}.")
+
+    panel = ensure_dataframe(returns, name="returns")
+    n_obs = panel.shape[0]
+    if train_window < 2:
+        raise ValidationError(f"rolling_stability: train_window must be >= 2, got {train_window}.")
+    if train_window > n_obs:
+        raise InsufficientDataError(
+            f"rolling_stability: train_window ({train_window}) exceeds the "
+            f"available observations ({n_obs})."
+        )
+
+    fit = clusterer or _default_clusterer(n_clusters=n_clusters, method=method, denoise=denoise)
+
+    # Slide a fixed-length in-sample window across the panel. Each window sees ONLY
+    # its own observations — no peeking forward — and the last window ends exactly
+    # at the final observation when the spacing allows.
+    starts = list(range(0, n_obs - train_window + 1, step))
+
+    raw_labels: list[pd.Series] = []
+    window_dates: list[str] = []
+    for start in starts:
+        end = start + train_window
+        window = panel.iloc[start:end]
+        labels = fit(window).astype(int)
+        raw_labels.append(labels)
+        window_dates.append(str(panel.index[end - 1]))
+
+    # Align each window's (arbitrary) integer labels to the previous window so
+    # adjacent-window ARI and births/deaths are computed on a consistent id space.
+    from stockclusters.stability.align import align_labels
+    from stockclusters.stability.ari import adjacent_window_ari, adjusted_rand_index
+
+    aligned_labels: list[pd.Series] = []
+    if raw_labels:
+        aligned_labels.append(raw_labels[0])
+        for i in range(1, len(raw_labels)):
+            aligned_labels.append(align_labels(aligned_labels[i - 1], raw_labels[i]))
+
+    ari_series = [
+        adjusted_rand_index(aligned_labels[i], aligned_labels[i + 1])
+        for i in range(len(aligned_labels) - 1)
+    ]
+    ari_mean = adjacent_window_ari(aligned_labels)
+
+    return StabilityResult(
+        window_labels=aligned_labels,
+        window_dates=window_dates,
+        ari_mean=ari_mean,
+        ari_series=ari_series,
+        n_windows=len(aligned_labels),
+        meta={
+            "train_window": int(train_window),
+            "step": int(step),
+            "method": str(method),
+            "denoise": bool(denoise),
+            "n_clusters": int(n_clusters),
+        },
+    )

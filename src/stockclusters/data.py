@@ -11,7 +11,8 @@ Importing this module has no side effects.
 
 from __future__ import annotations
 
-from datetime import date
+from collections.abc import Callable
+from datetime import date, timedelta
 from typing import Literal
 
 import numpy as np
@@ -25,6 +26,9 @@ from stockclusters._validation import ensure_dataframe
 #: Where a price/return panel ultimately came from. Returned alongside data so
 #: callers (and the API ``data_source`` field) can report provenance.
 DataSource = Literal["polygon", "yfinance", "stooq", "synthetic", "cache"]
+
+#: A price-panel fetcher: ``(tickers, start, end) -> wide close-price DataFrame``.
+_Fetcher = Callable[[list[str], date, date], pd.DataFrame]
 
 # quantcore-candidate: mirrors markowitz / risk-metrics data.py (yfinance->stooq
 # fallback + synthetic GBM + FRED-via-CSV risk-free).
@@ -92,6 +96,7 @@ def _fetch_yfinance(tickers: list[str], start: date, end: date) -> pd.DataFrame:
     """Fetch adjusted-close prices from yfinance (lazy import). May raise."""
     import yfinance as yf
 
+    session: object | None
     try:
         # curl_cffi Chrome impersonation is used transparently when available.
         from curl_cffi import requests as _curl_requests
@@ -103,7 +108,7 @@ def _fetch_yfinance(tickers: list[str], start: date, end: date) -> pd.DataFrame:
     download_kwargs: dict[str, object] = {
         "start": start.isoformat(),
         # yfinance's ``end`` is exclusive; bump by one day to include ``end``.
-        "end": (end + pd.Timedelta(days=1)).date().isoformat(),
+        "end": (end + timedelta(days=1)).isoformat(),
         "auto_adjust": True,
         "progress": False,
         "threads": False,
@@ -132,24 +137,26 @@ def _fetch_stooq(tickers: list[str], start: date, end: date) -> pd.DataFrame:
 
 def _extract_close(raw: pd.DataFrame, tickers: list[str]) -> pd.DataFrame:
     """Normalize a provider response to a wide ``date x ticker`` close-price panel."""
+    selected: pd.DataFrame | pd.Series
     if isinstance(raw.columns, pd.MultiIndex):
         # Prefer an adjusted/close level; providers label it "Close" (auto_adjust)
         # or "Adj Close".
         level0 = raw.columns.get_level_values(0)
         for field in ("Adj Close", "Close"):
             if field in set(level0):
-                frame = raw[field]
+                selected = raw[field]
                 break
         else:
-            frame = raw.xs(raw.columns.levels[0][0], axis=1, level=0)
+            selected = raw.xs(raw.columns.levels[0][0], axis=1, level=0)
     elif "Close" in raw.columns:
         # Single-ticker frame with OHLCV columns.
-        frame = raw[["Close"]].copy()
-        frame.columns = pd.Index([tickers[0]])
+        single = raw[["Close"]].copy()
+        single.columns = pd.Index([tickers[0]])
+        selected = single
     else:
-        frame = raw
+        selected = raw
 
-    frame = pd.DataFrame(frame).astype("float64")
+    frame = pd.DataFrame(selected).astype("float64")
     # Keep only the requested tickers that are actually present, in request order.
     present = [t for t in tickers if t in frame.columns]
     if present:
@@ -212,7 +219,7 @@ def get_prices(
     if source_pref == "polygon":
         # Try the real Polygon provider first, then fall through to the existing
         # yfinance -> stooq (-> synthetic) chain on any failure.
-        chain: list[tuple[DataSource, object]] = [
+        chain: list[tuple[DataSource, _Fetcher]] = [
             ("polygon", _fetch_polygon),
             ("yfinance", _fetch_yfinance),
             ("stooq", _fetch_stooq),
@@ -230,11 +237,11 @@ def get_prices(
 
     for name, fetcher in chain:
         try:
-            frame = fetcher(symbols, start, end)  # type: ignore[operator]
+            frame = fetcher(symbols, start, end)
         except Exception:
             continue
         if frame is not None and not frame.empty:
-            return frame.astype("float64"), name  # type: ignore[return-value]
+            return frame.astype("float64"), name
 
     # Final fallback: deterministic synthetic panel so the library is usable
     # offline and in CI.
@@ -320,9 +327,7 @@ def get_risk_free(
     return series
 
 
-def _fetch_risk_free_annual(
-    start: date, end: date, index: pd.DatetimeIndex
-) -> pd.Series:
+def _fetch_risk_free_annual(start: date, end: date, index: pd.DatetimeIndex) -> pd.Series:
     """Annualized risk-free rate aligned to ``index`` (FRED-via-CSV, synthetic fallback).
 
     Tries to load an annualized rate (e.g. the 3-month T-bill, FRED ``DGS3MO``)
@@ -341,7 +346,7 @@ def _fetch_risk_free_annual(
         annual = (raw.iloc[:, 0].astype("float64") / 100.0).reindex(index).ffill().bfill()
         if annual.isna().all():
             raise ValueError("FRED risk-free series is empty.")
-        return annual
+        return pd.Series(annual, dtype="float64")
     except Exception:
         # Flat 2% annual synthetic fallback.
         return pd.Series(0.02, index=index, dtype="float64")

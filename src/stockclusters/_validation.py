@@ -10,7 +10,7 @@ Importing this module has no side effects.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ from stockclusters._exceptions import InsufficientDataError, ValidationError
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+    from typing import Any
 
 # quantcore-candidate: mirrors risk-metrics:src/riskmetrics/_validation.py
 # quantcore-candidate: mirrors factorlab:src/factorlab/_validation.py
@@ -113,7 +114,9 @@ def ensure_dataframe(
             raise ValidationError(f"{name} must be 2-dimensional, got ndim={data.ndim}.")
         frame = pd.DataFrame(data, columns=list(columns) if columns is not None else None)
     else:
-        frame = pd.DataFrame(data)
+        # ``data`` is a mapping / sequence coercible to a DataFrame; pandas-stubs
+        # has no overload for the broad ``object`` type, so widen for the call.
+        frame = pd.DataFrame(cast("Any", data))
 
     if frame.ndim != 2:
         raise ValidationError(f"{name} must be 2-dimensional.")

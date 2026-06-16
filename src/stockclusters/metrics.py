@@ -19,6 +19,7 @@ from collections.abc import Mapping
 import numpy as np
 import pandas as pd
 
+from stockclusters._exceptions import ValidationError
 from stockclusters._typing import MatrixLike
 
 __all__ = [
@@ -27,6 +28,19 @@ __all__ = [
     "modularity",
     "silhouette_score",
 ]
+
+
+def _as_labelled_matrix(mat: MatrixLike, *, name: str) -> tuple[np.ndarray, list[str]]:
+    """Coerce a square matrix to ``(ndarray, labels)``, validating squareness."""
+    if isinstance(mat, pd.DataFrame):
+        labels = [str(c) for c in mat.columns]
+        arr = mat.to_numpy(dtype=np.float64)
+    else:
+        arr = np.asarray(mat, dtype=np.float64)
+        labels = [str(i) for i in range(arr.shape[0])] if arr.ndim == 2 else []
+    if arr.ndim != 2 or arr.shape[0] != arr.shape[1]:
+        raise ValidationError(f"{name} must be a square 2-D matrix, got shape {arr.shape}.")
+    return arr, labels
 
 
 def silhouette_score(dist: MatrixLike, labels: pd.Series) -> float:
@@ -56,7 +70,54 @@ def silhouette_score(dist: MatrixLike, labels: pd.Series) -> float:
     ValidationError
         If there are fewer than two clusters or labels/dist disagree.
     """
-    raise NotImplementedError
+    arr, mat_labels = _as_labelled_matrix(dist, name="dist")
+    if not isinstance(labels, pd.Series):
+        raise ValidationError("labels must be a pandas Series indexed by asset.")
+    n = arr.shape[0]
+    if int(labels.shape[0]) != n:
+        raise ValidationError(f"labels length ({labels.shape[0]}) must match dist size ({n}).")
+    # Align labels to the matrix order when the matrix carries asset labels.
+    if mat_labels and set(mat_labels) == set(str(i) for i in labels.index):
+        label_arr = labels.reindex([*mat_labels]).to_numpy()
+    else:
+        label_arr = labels.to_numpy()
+
+    unique = pd.unique(label_arr)
+    n_clusters = len(unique)
+    if n_clusters < 2:
+        raise ValidationError(f"silhouette_score requires at least two clusters, got {n_clusters}.")
+    if n_clusters >= n:
+        # Every point its own cluster: silhouette is undefined per sklearn (a==0,
+        # b across singletons); sklearn returns the mean over the per-sample values
+        # which are all defined here only when at least one cluster has >1 member.
+        raise ValidationError("silhouette_score requires 2 <= n_clusters <= n_samples - 1.")
+
+    # Cluster index arrays for vectorized intra/inter distances.
+    clusters: dict[object, np.ndarray] = {c: np.flatnonzero(label_arr == c) for c in unique}
+    sizes = {c: idx.size for c, idx in clusters.items()}
+
+    sil = np.empty(n, dtype=np.float64)
+    for i in range(n):
+        ci = label_arr[i]
+        own = clusters[ci]
+        if sizes[ci] > 1:
+            # Mean distance to other members of own cluster (exclude self).
+            a_i = float(arr[i, own].sum()) / (sizes[ci] - 1)
+        else:
+            # Singleton cluster: sklearn defines its silhouette as 0.
+            sil[i] = 0.0
+            continue
+        b_i = np.inf
+        for c, idx in clusters.items():
+            if c == ci:
+                continue
+            b_c = float(arr[i, idx].mean())
+            if b_c < b_i:
+                b_i = b_c
+        denom = max(a_i, b_i)
+        sil[i] = 0.0 if denom == 0.0 else (b_i - a_i) / denom
+
+    return float(sil.mean())
 
 
 def cophenetic_correlation(linkage: np.ndarray, dist: MatrixLike) -> float:
@@ -85,7 +146,26 @@ def cophenetic_correlation(linkage: np.ndarray, dist: MatrixLike) -> float:
     ValidationError
         If shapes are inconsistent.
     """
-    raise NotImplementedError
+    # Lazy import: keep SciPy off this pure module's import path.
+    from scipy.cluster.hierarchy import cophenet
+    from scipy.spatial.distance import squareform
+
+    link_arr = np.asarray(linkage, dtype=np.float64)
+    arr, _ = _as_labelled_matrix(dist, name="dist")
+    n = arr.shape[0]
+    if link_arr.ndim != 2 or link_arr.shape[1] != 4 or link_arr.shape[0] != n - 1:
+        raise ValidationError(
+            f"linkage must be ({n - 1}, 4) for an {n}-asset distance matrix, got {link_arr.shape}."
+        )
+
+    # Condense the (symmetric, zero-diagonal) distance matrix to vector form. Force
+    # an exact zero diagonal so squareform's checksum does not reject FP drift.
+    sym = 0.5 * (arr + arr.T)
+    np.fill_diagonal(sym, 0.0)
+    condensed = squareform(sym, checks=False)
+
+    coph_corr, _ = cophenet(link_arr, condensed)
+    return float(coph_corr)
 
 
 def modularity(labels: pd.Series, corr: MatrixLike) -> float:
@@ -113,7 +193,34 @@ def modularity(labels: pd.Series, corr: MatrixLike) -> float:
     ValidationError
         If ``labels`` and ``corr`` labels disagree.
     """
-    raise NotImplementedError
+    if not isinstance(labels, pd.Series):
+        raise ValidationError("labels must be a pandas Series indexed by asset.")
+    arr, mat_labels = _as_labelled_matrix(corr, name="corr")
+    n = arr.shape[0]
+    if int(labels.shape[0]) != n:
+        raise ValidationError(f"labels length ({labels.shape[0]}) must match corr size ({n}).")
+    if mat_labels and set(mat_labels) == set(str(i) for i in labels.index):
+        label_arr = labels.reindex([*mat_labels]).to_numpy()
+    else:
+        label_arr = labels.to_numpy()
+
+    # Build the weighted adjacency: non-negative correlations as edge weights, no
+    # self-loops. Negative correlations are thresholded to zero (Newman modularity
+    # is defined for a non-negative weighted graph).
+    weights = np.clip(0.5 * (arr + arr.T), 0.0, None)
+    np.fill_diagonal(weights, 0.0)
+
+    total = float(weights.sum())  # = 2m (each edge counted twice)
+    if total <= 0.0:
+        # No positive edges: a degenerate graph has zero community structure.
+        return 0.0
+
+    degree = weights.sum(axis=1)
+    # Same-cluster indicator (delta_{c_i, c_j}).
+    same = label_arr[:, None] == label_arr[None, :]
+    actual = float(weights[same].sum())
+    expected = float((np.outer(degree, degree) / total)[same].sum())
+    return (actual - expected) / total
 
 
 def ari_vs_gics(labels: pd.Series, gics: Mapping[str, str]) -> float:
@@ -143,4 +250,23 @@ def ari_vs_gics(labels: pd.Series, gics: Mapping[str, str]) -> float:
     ValidationError
         If fewer than two assets have a GICS sector.
     """
-    raise NotImplementedError
+    if not isinstance(labels, pd.Series):
+        raise ValidationError("labels must be a pandas Series indexed by asset ticker.")
+
+    # Restrict to assets that appear in BOTH the labeling and the GICS map, in the
+    # label index order, so the two partitions are over the identical asset set.
+    shared = [str(t) for t in labels.index if str(t) in gics]
+    if len(shared) < 2:
+        raise ValidationError(
+            f"ari_vs_gics needs at least two assets with a GICS sector, got {len(shared)}."
+        )
+
+    cluster_labels = pd.Series([int(labels.loc[t]) for t in shared], index=shared, dtype=int)
+    # Factorize the (string) GICS sectors to integer codes for the ARI.
+    sectors = pd.Series([gics[t] for t in shared], index=shared)
+    sector_codes = pd.Series(pd.factorize(sectors)[0], index=shared, dtype=int)
+
+    # Reuse the library's parity-tested ARI (matches sklearn to 1e-12).
+    from stockclusters.stability.ari import adjusted_rand_index
+
+    return adjusted_rand_index(cluster_labels, sector_codes)

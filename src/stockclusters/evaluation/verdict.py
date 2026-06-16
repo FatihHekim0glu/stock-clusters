@@ -12,7 +12,10 @@ Importing this module has no side effects.
 
 from __future__ import annotations
 
+import math
 from enum import StrEnum
+
+from stockclusters._exceptions import ValidationError
 
 __all__ = ["ClusteringVerdict", "derive_clustering_verdict"]
 
@@ -87,4 +90,23 @@ def derive_clustering_verdict(
     ValidationError
         If ``memmel_jk_pvalue`` is outside ``[0, 1]`` or not finite.
     """
-    raise NotImplementedError
+    if not math.isfinite(memmel_jk_pvalue) or not 0.0 <= memmel_jk_pvalue <= 1.0:
+        raise ValidationError(
+            f"memmel_jk_pvalue must be a finite value in [0, 1], got {memmel_jk_pvalue}."
+        )
+
+    # A directional claim requires BOTH the Memmel-JK test AND the deflated Sharpe
+    # to support it. If either fails, the honest verdict is "no difference" —
+    # regardless of the sign or magnitude of the point estimate. This is the
+    # structural guard that makes a false "beats 1/N" claim impossible.
+    test_insignificant = memmel_jk_pvalue >= alpha
+    dsr_fails = deflated_sharpe <= dsr_threshold
+
+    if test_insignificant or dsr_fails:
+        return ClusteringVerdict.NO_SIGNIFICANT_DIFFERENCE
+
+    # Past the gate the evidence is significant; the sign of the gap decides the
+    # direction. A non-positive gap here means the significant move is a loss.
+    if sharpe_diff > 0.0:
+        return ClusteringVerdict.CLUSTERS_BEAT_1N
+    return ClusteringVerdict.CLUSTERS_LOSE_TO_1N

@@ -19,6 +19,7 @@ from stockclusters.allocation.schemes import (
     DiversificationResult,
     cluster_equal_weight,
     one_over_n_weights,
+    run_diversification,
     stripped_hrp_weights,
 )
 
@@ -26,5 +27,6 @@ __all__ = [
     "DiversificationResult",
     "cluster_equal_weight",
     "one_over_n_weights",
+    "run_diversification",
     "stripped_hrp_weights",
 ]

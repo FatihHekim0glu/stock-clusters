@@ -89,6 +89,12 @@ from stockclusters.metrics import (
     modularity,
     silhouette_score,
 )
+from stockclusters.pipeline import (
+    ClusterAnalysis,
+    ClusterAnalysisParams,
+    assemble_figures,
+    run_cluster_analysis,
+)
 from stockclusters.plots import (
     cluster_heatmap_figure,
     dendrogram_figure,
@@ -112,6 +118,9 @@ __all__ = [
     "TRADING_DAYS",
     # backtest
     "BacktestResult",
+    # pipeline
+    "ClusterAnalysis",
+    "ClusterAnalysisParams",
     # clustering
     "ClusterResult",
     # evaluation
@@ -140,6 +149,8 @@ __all__ = [
     "annualized_vol",
     # metrics
     "ari_vs_gics",
+    # pipeline
+    "assemble_figures",
     "births_and_deaths",
     "block_bootstrap_sharpe_gap",
     "cluster_equal_weight",
@@ -180,6 +191,7 @@ __all__ = [
     "probabilistic_sharpe_ratio",
     "rmt_signal_embedding",
     "rolling_stability",
+    "run_cluster_analysis",
     "sample_cov",
     "select_k_gap",
     "sharpe_ratio",

@@ -1,0 +1,94 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "stock-clusters: Correlation clustering of equity universes, tested honestly out-of-sample"
+abstract: >-
+  A pure, typed Python implementation that clusters an equity universe by its
+  RMT-denoised correlation structure under the Mantegna distance
+  (d = sqrt(2(1 - rho))), maps its diversification skeleton, and honestly tests
+  whether cluster-aware allocation (cluster-equal-weight, stripped-HRP) beats the
+  naive 1/N portfolio out-of-sample after costs. Cluster count is selected by the
+  gap statistic against a phase-randomized null (Tibshirani 1-SE rule); the
+  out-of-sample Sharpe gap is scored with the Jobson-Korkie-Memmel test and the
+  Deflated Sharpe Ratio over the full swept configuration grid. The headline
+  verdict is a pure function of the inference, structurally incapable of claiming
+  an edge that the evidence does not support.
+type: software
+version: 0.1.0
+date-released: "2026-06-16"
+license: MIT
+repository-code: "https://github.com/FatihHekim0glu/stock-clusters"
+url: "https://fatihhekimoglu.com/tools/stock-clusters"
+authors:
+  - family-names: "FatihHekim0glu"
+keywords:
+  - correlation-clustering
+  - hierarchical-clustering
+  - random-matrix-theory
+  - diversification
+  - quantitative-finance
+references:
+  - type: article
+    title: "Hierarchical Structure in Financial Markets"
+    authors:
+      - family-names: "Mantegna"
+        given-names: "Rosario N."
+    journal: "The European Physical Journal B"
+    volume: 11
+    issue: 1
+    year: 1999
+  - type: article
+    title: "Estimating the Number of Clusters in a Data Set via the Gap Statistic"
+    authors:
+      - family-names: "Tibshirani"
+        given-names: "Robert"
+      - family-names: "Walther"
+        given-names: "Guenther"
+      - family-names: "Hastie"
+        given-names: "Trevor"
+    journal: "Journal of the Royal Statistical Society: Series B"
+    volume: 63
+    issue: 2
+    year: 2001
+  - type: article
+    title: "Noise Dressing of Financial Correlation Matrices"
+    authors:
+      - family-names: "Laloux"
+        given-names: "Laurent"
+      - family-names: "Cizeau"
+        given-names: "Pierre"
+      - family-names: "Bouchaud"
+        given-names: "Jean-Philippe"
+      - family-names: "Potters"
+        given-names: "Marc"
+    journal: "Physical Review Letters"
+    volume: 83
+    issue: 7
+    year: 1999
+  - type: article
+    title: "Performance Hypothesis Testing with the Sharpe and Treynor Measures"
+    authors:
+      - family-names: "Jobson"
+        given-names: "J. D."
+      - family-names: "Korkie"
+        given-names: "Bob M."
+    journal: "The Journal of Finance"
+    volume: 36
+    issue: 4
+    year: 1981
+  - type: article
+    title: "Performance Hypothesis Testing with the Sharpe Ratio"
+    authors:
+      - family-names: "Memmel"
+        given-names: "Christoph"
+    journal: "Finance Letters"
+    volume: 1
+    year: 2003
+  - type: article
+    title: "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting, and Non-Normality"
+    authors:
+      - family-names: "Bailey"
+        given-names: "David H."
+      - family-names: "Lopez de Prado"
+        given-names: "Marcos"
+    journal: "The Journal of Portfolio Management"
+    year: 2014
