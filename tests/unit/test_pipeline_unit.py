@@ -50,15 +50,20 @@ def test_dsr_trial_count_is_full_product() -> None:
 
 
 @pytest.mark.unit
-def test_pipeline_kmeans_branch_has_no_dendrogram() -> None:
+def test_pipeline_kmeans_branch_still_renders_dendrogram() -> None:
     panel = _k_blocks_panel()
     params = ClusterAnalysisParams(method="kmeans", n_clusters=4)
     analysis = run_cluster_analysis(panel, params)
 
-    # K-means is a flat method: no linkage, so no dendrogram figure.
+    # K-means is a flat method: the display ClusterResult carries no linkage...
     assert analysis.cluster_result.linkage is None
+    # ...but the dendrogram is a structural diagnostic of the SAME correlation
+    # hierarchy, so assemble_figures falls back to an average-linkage tree on the
+    # display distance matrix — the figure must NOT be empty.
     figures = assemble_figures(analysis)
-    assert figures["dendrogram_figure"] is None
+    dendro = figures["dendrogram_figure"]
+    assert dendro is not None
+    assert len(dendro["data"]) > 0, "kmeans-winner dendrogram must still have traces"
     # Heatmap / MST / embedding still produced.
     assert figures["heatmap_figure"] is not None
     assert figures["mst_figure"] is not None
