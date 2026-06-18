@@ -4,13 +4,17 @@ Every fixture is deterministic (driven by :func:`stockclusters._rng.make_rng`) a
 returns a wide pandas ``DataFrame`` of synthetic log-returns with known correlation
 structure, so tests across the suite share identical data:
 
-- ``one_block_correlation`` — a single common factor: every asset positively
+- ``one_block_correlation``: a single common factor where every asset is positively
   correlated (one true cluster). The "structure is real but trivial" case.
-- ``k_blocks`` — ``K`` blocks of assets with high within-block and low cross-block
-  correlation: the canonical case the clustering must recover (``K`` clusters).
-- ``pure_noise`` — independent assets, population correlation = identity: the null,
-  where honest clustering and the gap statistic should find no structure and the
-  diversification horse race must come back insignificant.
+- ``k_blocks``: ``K`` blocks of assets with high within-block and low cross-block
+  correlation, the canonical case the clustering must recover (``K`` clusters).
+- ``pure_noise``: independent assets, population correlation = identity, the null,
+  where honest clustering and the gap statistic should find no structure. The
+  diversification horse race is calibrated rather than significant here: averaged
+  over many null draws the Sharpe-gap test rejects at about its nominal level (see
+  ``tests/regression/test_verdict_honest_null.py``). A single fixture draw is just
+  one sample of a near-uniform p-value, so it is not asserted insignificant on its
+  own.
 
 Importing this module has no side effects beyond fixture registration.
 """
@@ -67,7 +71,7 @@ def one_block_correlation() -> pd.DataFrame:
     """One-block returns panel: a single common factor (one true cluster).
 
     Shape ``(750, 9)``. Every pair has correlation ``0.6``, so there is exactly one
-    genuine cluster — the gap statistic should not split it, and clustering should
+    genuine cluster, so the gap statistic should not split it, and clustering should
     largely re-discover the single block.
     """
     n_assets = 9
@@ -114,9 +118,12 @@ def pure_noise() -> pd.DataFrame:
     """Independent-asset returns panel: the no-structure null.
 
     Shape ``(750, 9)``. Every column is i.i.d. Gaussian noise (population
-    correlation = identity), so clustering should find no meaningful structure, the
-    gap statistic should not reject ``k = 1``, and the diversification horse race
-    must come back insignificant (Memmel-JK p not significant, DSR <= 0).
+    correlation = identity), so clustering should find no meaningful structure and
+    the gap statistic should not reject ``k = 1``. On this single draw the
+    diversification horse race never over-claims (the headline can never be
+    "clusters beat 1/N", since on noise the DSR is non-positive); the test rejects
+    at about its nominal level when averaged over many such draws, so the Sharpe-gap
+    p-value of any one draw is not asserted insignificant on its own.
     """
     n_assets = 9
     corr = np.eye(n_assets)
