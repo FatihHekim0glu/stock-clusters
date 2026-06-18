@@ -17,7 +17,7 @@ kurtosis.
 The integrity of this correction hinges entirely on **what counts as a trial**. A
 tempting under-count is `n_trials = 1` ("we only ran one clustering") or counting
 only the headline allocators. But every knob the pipeline *could* have turned and
-reported the best of is a trial — the clustering family, the number of clusters
+reported the best of is a trial, the clustering family, the number of clusters
 `k`, the cluster-aware weighting scheme selected, the RMT denoise toggle, and the
 OOS cost level. Under-counting `n_trials` is exactly how a lucky clustering
 configuration gets laundered into a "significant" edge over 1/N. **This is the top
@@ -28,8 +28,9 @@ correctness risk in the project.**
 The DSR `n_trials` counts the **full explored configuration grid**:
 
 ```
-n_trials = #clustering-families     (hierarchical, kmeans — 2 when method="both",
-                                     else 1; was loosely called "#linkages")
+n_trials = #clustering-families     (hierarchical and kmeans give 2 when
+                                     method="both", else 1; was loosely called
+                                     "#linkages")
          × #k-candidates            (every k in [k_min, k_max], per ADR-0005)
          × #weighting-schemes       (the cluster-aware arms selected-best on OOS:
                                      cluster-EW and stripped-HRP → 2. 1/N is the
@@ -61,7 +62,7 @@ the multiplicity is visible to the reader, not buried.
 
 - **Positive.** The "winning" Sharpe found by exploring families × `k` × schemes ×
   denoise × costs is correctly deflated. With the full grid counted, the
-  cluster-vs-1/N DSR lands near zero — the honest finding (ADR-0004) — rather than a
+  cluster-vs-1/N DSR lands near zero, the honest finding (ADR-0004), rather than a
   spuriously significant one.
 - **Positive.** Every other ADR that *adds* an axis (a clustering family via
   `method="both"`, a wider `k` range, a denoise comparison) does so knowing it
@@ -69,8 +70,8 @@ the multiplicity is visible to the reader, not buried.
 - **Positive.** Because the verdict is a pure function of the JKM `p`-value and the
   DSR (ADR-0004), a deflated-to-zero DSR mechanically blocks an over-claim.
 - **Cost.** The verdict is conservative: a genuine small edge could be deflated
-  below significance. We accept this — for a benchmark whose purpose is honesty, a
+  below significance. We accept this, for a benchmark whose purpose is honesty, a
   false "no edge" is far cheaper than a false "clusters beat 1/N".
-- **Risk addressed.** "Multiplicity / data-snooping inflating the Sharpe" — the
-  project's top risk — is countered by counting the full grid, a
+- **Risk addressed.** "Multiplicity / data-snooping inflating the Sharpe", the
+  project's top risk, is countered by counting the full grid, a
   `n_trials >= product` guard, and a DSR-monotonicity property test.

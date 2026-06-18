@@ -4,7 +4,7 @@ Turns a wide panel of prices (or returns) into a Pearson correlation matrix over
 log-returns. The honesty-critical detail is the differencing convention:
 
     ``prices.pct_change(fill_method=None)`` then ``np.log1p`` (or ``np.log`` of the
-    price ratio) — NEVER forward-fill before differencing, which would manufacture
+    price ratio) - NEVER forward-fill before differencing, which would manufacture
     zero-returns and inflate correlations.
 
 Importing this module has no side effects.

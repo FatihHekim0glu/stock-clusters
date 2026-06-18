@@ -2,7 +2,7 @@
 
 On the ``pure_noise`` fixture the diversification horse race MUST come back with no
 significant cluster-vs-1/N edge and the headline verdict MUST be
-``NO_SIGNIFICANT_DIFFERENCE`` — this is the literature-consistent honest null, not a
+``NO_SIGNIFICANT_DIFFERENCE`` - this is the literature-consistent honest null, not a
 bug. Also pins the DSR trial-count guard: ``n_trials`` is never *less* than the
 product of the swept axes (under-counting manufactures false significance).
 """
@@ -37,7 +37,7 @@ def test_pure_noise_is_insignificant(pure_noise: pd.DataFrame) -> None:
     # the directional "clusters beat 1/N" over-claim. With the leakage fixed the
     # clusters are RE-FIT per walk-forward train window on noise, so they either
     # match 1/N (NO_SIGNIFICANT_DIFFERENCE) or honestly LOSE to it
-    # (CLUSTERS_LOSE_TO_1N) — both are honest null outcomes; only CLUSTERS_BEAT_1N
+    # (CLUSTERS_LOSE_TO_1N) - both are honest null outcomes; only CLUSTERS_BEAT_1N
     # is forbidden.
     assert analysis.verdict is not ClusteringVerdict.CLUSTERS_BEAT_1N
     assert analysis.verdict in (

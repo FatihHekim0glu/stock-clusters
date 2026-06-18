@@ -15,7 +15,7 @@ clusters, stripped-HRP) rarely clear it by a statistically significant, cost- an
 multiplicity-adjusted margin.
 
 A research tool earns trust by being **structurally incapable of over-claiming**.
-It is not enough to "try to report honestly" — a narration step can always drift.
+It is not enough to "try to report honestly", a narration step can always drift.
 The verdict must be a deterministic function of the inference outputs, so a
 non-significant test or a deflated-to-zero Sharpe *mechanically* blocks a
 "beats 1/N" headline.
@@ -48,7 +48,7 @@ beat 1/N after costs.
 
 - **Positive.** The headline cannot drift away from the evidence: a lucky point
   estimate with an insignificant test or a zero DSR can never print "beats 1/N".
-- **Positive.** The honest null is a *feature* — the tool's value is diagnostic (a
+- **Positive.** The honest null is a *feature*, the tool's value is diagnostic (a
   map of the diversification skeleton), not a false alpha claim.
 - **Positive.** Because the comparison is on an identical OOS index, a Sharpe gap
   cannot be an artifact of mismatched samples.

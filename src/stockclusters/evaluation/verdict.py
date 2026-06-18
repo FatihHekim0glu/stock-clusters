@@ -3,7 +3,7 @@
 The headline verdict is a PURE FUNCTION of the inference outputs
 ``(memmel_jk_pvalue, deflated_sharpe, sharpe_diff)`` from a fixed enum. It is
 structurally incapable of emitting ``clusters_beat_1n`` while the Memmel-JK test is
-insignificant or the deflated Sharpe is non-positive — the truth table is
+insignificant or the deflated Sharpe is non-positive - the truth table is
 unit-tested. This is what keeps the README honest: the verdict is derived from the
 evidence, never narrated.
 
@@ -34,7 +34,7 @@ class ClusteringVerdict(StrEnum):
     #: The OOS Sharpe gap is negative AND statistically significant.
     CLUSTERS_LOSE_TO_1N = "clusters_lose_to_1n"
 
-    #: The gap is not statistically distinguishable from zero — the expected,
+    #: The gap is not statistically distinguishable from zero - the expected,
     #: literature-consistent outcome (clustering is diagnostic, not alpha).
     NO_SIGNIFICANT_DIFFERENCE = "no_significant_difference"
 
@@ -96,7 +96,7 @@ def derive_clustering_verdict(
         )
 
     # A directional claim requires BOTH the Memmel-JK test AND the deflated Sharpe
-    # to support it. If either fails, the honest verdict is "no difference" —
+    # to support it. If either fails, the honest verdict is "no difference" -
     # regardless of the sign or magnitude of the point estimate. This is the
     # structural guard that makes a false "beats 1/N" claim impossible.
     test_insignificant = memmel_jk_pvalue >= alpha

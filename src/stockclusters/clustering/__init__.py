@@ -3,13 +3,13 @@
 Two families of clustering live here, both consuming the Mantegna distance / RMT
 signal from :mod:`stockclusters.correlation`:
 
-- :mod:`stockclusters.clustering.hierarchical` — SciPy agglomerative clustering
+- :mod:`stockclusters.clustering.hierarchical` - SciPy agglomerative clustering
   (average / ward / single linkage) on the distance matrix.
-- :mod:`stockclusters.clustering.embedding` — an RMT-signal eigenvector embedding
+- :mod:`stockclusters.clustering.embedding` - an RMT-signal eigenvector embedding
   of the correlation matrix.
-- :mod:`stockclusters.clustering.kmeans` — K-means ON that embedding (not on the
+- :mod:`stockclusters.clustering.kmeans` - K-means ON that embedding (not on the
   raw distances).
-- :mod:`stockclusters.clustering.selection` — gap statistic vs a phase-randomized
+- :mod:`stockclusters.clustering.selection` - gap statistic vs a phase-randomized
   null with the Tibshirani 1-SE rule (silhouette + MST modularity reported as
   cross-checks); records ALL trials for the DSR trial count.
 

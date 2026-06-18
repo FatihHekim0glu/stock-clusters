@@ -38,7 +38,7 @@ def _default_clusterer(
 
     NO-LOOKAHEAD: the returned callable sees only the window passed to it; it
     estimates the correlation, optionally RMT-denoises it, maps to Mantegna
-    distance, and cuts the hierarchy at ``n_clusters`` — all within that window.
+    distance, and cuts the hierarchy at ``n_clusters`` - all within that window.
     """
 
     def _cluster(window: pd.DataFrame) -> pd.Series:
@@ -169,7 +169,7 @@ def rolling_stability(
     fit = clusterer or _default_clusterer(n_clusters=n_clusters, method=method, denoise=denoise)
 
     # Slide a fixed-length in-sample window across the panel. Each window sees ONLY
-    # its own observations — no peeking forward — and the last window ends exactly
+    # its own observations - no peeking forward - and the last window ends exactly
     # at the final observation when the spacing allows.
     starts = list(range(0, n_obs - train_window + 1, step))
 

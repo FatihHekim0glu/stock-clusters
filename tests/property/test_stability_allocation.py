@@ -232,7 +232,7 @@ def _pre_cutoff(series: pd.Series, cutoff_date: pd.Timestamp) -> pd.Series:
 
 
 def _e2e_block_panel(n_obs: int, *, seed: int) -> pd.DataFrame:
-    """A seeded 4-block-of-3 return panel (no labels — the pipeline fits them)."""
+    """A seeded 4-block-of-3 return panel (no labels - the pipeline fits them)."""
     panel, _ = _block_panel(n_obs, seed=seed)
     return panel
 
@@ -243,8 +243,8 @@ def _run_e2e_curves(panel: pd.DataFrame, *, leaky: bool) -> dict[str, pd.Series]
     With ``leaky=False`` the pipeline's TRAIN-ONLY per-window re-fit is used
     (post-fix). With ``leaky=True`` a GLOBAL full-panel fit is injected by patching
     the pipeline's per-window clusterer builder to return a callable that IGNORES
-    the train window and emits the whole-panel labels — i.e. the pre-fix look-ahead
-    leak — so the test's sensitivity can be sanity-checked.
+    the train window and emits the whole-panel labels - i.e. the pre-fix look-ahead
+    leak - so the test's sensitivity can be sanity-checked.
     """
     from stockclusters.allocation import schemes
     from stockclusters.clustering.hierarchical import hierarchical_clusters
@@ -325,7 +325,7 @@ def test_end_to_end_no_lookahead_future_perturbation() -> None:
     run_diversification=True)`` pipeline on both. With the leak fixed (clusters
     RE-FIT inside each walk-forward TRAIN window) the OOS-evaluated frozen labels
     AND the pre-cutoff portion of every OOS return series are byte-identical between
-    the two runs — post-cutoff returns cannot reach back into pre-cutoff in-sample
+    the two runs - post-cutoff returns cannot reach back into pre-cutoff in-sample
     clusters.
 
     Sensitivity sanity-check (``leaky=True``): the SAME OOS-return assertion is run

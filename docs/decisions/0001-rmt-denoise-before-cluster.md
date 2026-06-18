@@ -11,7 +11,7 @@ An empirical correlation matrix estimated from `T` daily returns over `N` assets
 is dominated by estimation noise: with the aspect ratio `q = N / T` away from
 zero, most of its eigenvalues fall inside the Marchenko-Pastur (MP) bulk and are
 statistically indistinguishable from those of a pure-noise matrix. Clustering the
-*raw* correlation therefore partly clusters sampling noise — the dendrogram leaf
+*raw* correlation therefore partly clusters sampling noise, the dendrogram leaf
 order, the cut into `k` clusters, and the temporal stability of the assignment all
 inherit that noise.
 
@@ -39,7 +39,7 @@ The clip is the reused, parity-tested `marchenko_pastur_clip` (edge vs analytic
 `(1 ± sqrt(q))^2` to 1e-10); the cleaned matrix is renormalized back to a unit
 diagonal so it is a proper correlation before the distance is taken.
 
-Crucially, the choice is **not asserted to help** — it is measured. The
+Crucially, the choice is **not asserted to help**, it is measured. The
 denoise-on/off **ablation** is a runnable regression test
 (`tests/regression/test_rmt_ablation.py`) that tabulates ARI-vs-GICS and mean
 adjacent-window stability ARI for both settings, and the result is reported
@@ -53,7 +53,7 @@ honestly in the README validation table even when the effect is marginal.
 - **Positive.** Because denoising is a toggle with a published ablation, the claim
   "denoising helps" is evidence-backed, not assumed. On clean, well-separated
   synthetic blocks the gap is small (the structure is trivially recoverable either
-  way) — and the test asserts exactly that honest, modest delta.
+  way), and the test asserts exactly that honest, modest delta.
 - **Cost.** One eigendecomposition per fit, negligible at the universe sizes here,
   plus a renormalization pass to restore the unit diagonal.
 - **Risk addressed.** "Clustering sampling noise" is countered by an MP clip whose

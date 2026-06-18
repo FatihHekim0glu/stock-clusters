@@ -1,4 +1,4 @@
-"""stock-clusters — correlation-clustering of equity universes (pure, typed).
+"""stock-clusters - correlation-clustering of equity universes (pure, typed).
 
 Maps the diversification skeleton of an equity universe by clustering its
 RMT-denoised correlation matrix under the Mantegna metric, and honestly tests

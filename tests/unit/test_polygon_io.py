@@ -379,7 +379,7 @@ def test_get_json_httpx_non_429_error_raises(
 
 
 # --------------------------------------------------------------------------- #
-# _get_json_urllib fallback (lines 216-233) — httpx forced ABSENT               #
+# _get_json_urllib fallback (lines 216-233) - httpx forced ABSENT               #
 # --------------------------------------------------------------------------- #
 
 

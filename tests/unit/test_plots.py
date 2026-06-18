@@ -4,7 +4,7 @@ Every builder must return a JSON-serializable ``{"data": [...], "layout": {...}}
 mapping whose numeric leaves are finite (the API serializes with ``allow_nan=False``,
 so a stray ``NaN``/``Inf`` would break the response). Absent figures (e.g. no
 diversification backtest) are represented as an explicit ``None`` by the API/CLI
-layer, never as ``undefined``/``NaN`` — exercised here via the builders' graceful
+layer, never as ``undefined``/``NaN`` - exercised here via the builders' graceful
 handling of empty/absent inputs and an explicit-``None`` contract check.
 """
 
@@ -156,7 +156,7 @@ def test_absent_figure_contract_is_explicit_none() -> None:
     """The 'absent figure' convention is an explicit ``None`` (valid JSON null).
 
     The diversification figures (equity curve, stability) are absent when the
-    backtest is not run; the API/CLI represents that as an explicit ``None`` —
+    backtest is not run; the API/CLI represents that as an explicit ``None`` -
     never ``NaN`` or a missing key. This pins the contract the builders feed into.
     """
     response_fragment = {"equity_curve_figure": None, "stability_figure": None}

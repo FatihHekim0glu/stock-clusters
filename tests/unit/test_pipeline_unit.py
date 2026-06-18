@@ -59,7 +59,7 @@ def test_pipeline_kmeans_branch_still_renders_dendrogram() -> None:
     assert analysis.cluster_result.linkage is None
     # ...but the dendrogram is a structural diagnostic of the SAME correlation
     # hierarchy, so assemble_figures falls back to an average-linkage tree on the
-    # display distance matrix — the figure must NOT be empty.
+    # display distance matrix - the figure must NOT be empty.
     figures = assemble_figures(analysis)
     dendro = figures["dendrogram_figure"]
     assert dendro is not None

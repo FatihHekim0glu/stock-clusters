@@ -51,7 +51,7 @@ def mantegna_distance(corr: MatrixLike) -> pd.DataFrame:
     :math:`\rho = +1 \to d = 0`, :math:`\rho = 0 \to d = \sqrt{2}`,
     :math:`\rho = -1 \to d = 2`.
 
-    HONESTY REQUIREMENT: this is :math:`\sqrt{2(1 - \rho)}`, the Mantegna metric —
+    HONESTY REQUIREMENT: this is :math:`\sqrt{2(1 - \rho)}`, the Mantegna metric -
     NOT ``1 - rho`` (not a metric) and NOT ``1 - |rho|`` (collapses anti-correlated
     pairs). The triangle inequality and the other metric axioms are property-tested.
 
@@ -81,7 +81,7 @@ def mantegna_distance(corr: MatrixLike) -> pd.DataFrame:
     if float(np.nanmin(values)) < -1.0 - tol or float(np.nanmax(values)) > 1.0 + tol:
         raise ValidationError("corr contains entries outside [-1, 1].")
 
-    # HONESTY REQUIREMENT: the Mantegna metric is sqrt(2 * (1 - rho)) — NOT
+    # HONESTY REQUIREMENT: the Mantegna metric is sqrt(2 * (1 - rho)) - NOT
     # ``1 - rho`` (not a metric) and NOT ``1 - |rho|`` (collapses anti-correlation).
     # Clip first so 1 - rho never dips below zero under the sqrt from rounding.
     clipped = np.clip(values, -1.0, 1.0)
