@@ -1,8 +1,8 @@
 """RMT-signal eigenvector embedding of the correlation matrix.
 
 Embeds assets into a low-dimensional Euclidean space spanned by the
-*signal* eigenvectors of the correlation matrix — those whose eigenvalues exceed
-the Marchenko-Pastur upper edge — excluding the market-mode eigenvector. K-means
+*signal* eigenvectors of the correlation matrix - those whose eigenvalues exceed
+the Marchenko-Pastur upper edge - excluding the market-mode eigenvector. K-means
 (see :mod:`stockclusters.clustering.kmeans`) then runs on this embedding rather
 than on the raw distances.
 

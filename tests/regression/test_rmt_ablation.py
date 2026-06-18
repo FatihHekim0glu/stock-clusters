@@ -1,9 +1,9 @@
 """RMT-denoise ablation regression (Group C).
 
 ADR-0001 puts RMT denoising BEFORE clustering. This regression builds the honest
-denoise-on/off ablation table on two axes — ARI-vs-GICS (here the recoverable
+denoise-on/off ablation table on two axes - ARI-vs-GICS (here the recoverable
 ground-truth blocks stand in for GICS sectors) and temporal stability (mean
-adjacent-window ARI) — and asserts the *honest* properties:
+adjacent-window ARI) - and asserts the *honest* properties:
 
 - both settings recover the block structure (the effect is reported even if
   marginal, not assumed to be large);
@@ -11,7 +11,7 @@ adjacent-window ARI) — and asserts the *honest* properties:
   backed by a runnable test;
 - on the pure-noise null, neither setting manufactures spurious structure.
 
-The point is faithful reporting, not a guaranteed denoise win — on clean synthetic
+The point is faithful reporting, not a guaranteed denoise win - on clean synthetic
 blocks the gap is expected to be small.
 """
 

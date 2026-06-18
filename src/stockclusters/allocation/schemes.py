@@ -3,10 +3,10 @@
 Each scheme maps a cluster labeling (and, where relevant, a covariance estimate)
 to a weight vector on the simplex:
 
-- :func:`one_over_n_weights` — naive equal weight across all assets (the honest
+- :func:`one_over_n_weights` - naive equal weight across all assets (the honest
   benchmark the clustering must beat).
-- :func:`cluster_equal_weight` — equal weight per cluster, split equally within.
-- :func:`stripped_hrp_weights` — inverse-variance within cluster, equal across
+- :func:`cluster_equal_weight` - equal weight per cluster, split equally within.
+- :func:`stripped_hrp_weights` - inverse-variance within cluster, equal across
   clusters ("stripped-HRP": the cross-cluster recursive bisection of HRP replaced
   by a flat equal split).
 
@@ -168,7 +168,7 @@ def stripped_hrp_weights(labels: pd.Series, cov: MatrixLike) -> pd.Series:
     r"""Stripped-HRP: inverse-variance within cluster, equal across clusters.
 
     Allocates ``1 / K`` to each cluster and, within each cluster, weights members
-    inversely to their variances (the within-cluster step of HRP) — but replaces
+    inversely to their variances (the within-cluster step of HRP) - but replaces
     HRP's cross-cluster recursive bisection with a flat equal split across
     clusters ("stripped").
 
@@ -482,7 +482,7 @@ def _default_window_clusterer(
 
     NO-LOOKAHEAD: the returned callable sees only the window passed to it; it
     estimates the correlation, optionally RMT-denoises it, and cuts ``n_clusters``
-    clusters within that window — either by hierarchical linkage on the Mantegna
+    clusters within that window - either by hierarchical linkage on the Mantegna
     distance (``family="hierarchical"``) or by K-means on the RMT-signal embedding
     (``family="kmeans"``). Mirrors
     :func:`stockclusters.stability.resample._default_clusterer` so the

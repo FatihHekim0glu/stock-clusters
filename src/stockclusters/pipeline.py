@@ -1,4 +1,4 @@
-"""End-to-end clustering pipeline — the single high-level entrypoint.
+"""End-to-end clustering pipeline - the single high-level entrypoint.
 
 This module wires the three module groups (``correlation`` -> ``clustering`` ->
 ``stability`` / ``allocation`` / ``evaluation``) into one coherent call so the
@@ -20,10 +20,10 @@ The headline verdict is a PURE function of the diversification inference outputs
 read "clusters beat 1/N" while the Memmel-JK test is insignificant or the deflated
 Sharpe is non-positive.
 
-HONESTY / LEAKAGE DISCIPLINE — what is fit on what
+HONESTY / LEAKAGE DISCIPLINE - what is fit on what
     - The DISPLAY cluster map (the ``ClusterResult`` carried on the bundle) is fit
       on the FULL supplied panel: correlation -> (RMT denoise) -> Mantegna distance
-      -> gap-``k`` -> labels. This full-panel map is DESCRIPTIVE — it drives the
+      -> gap-``k`` -> labels. This full-panel map is DESCRIPTIVE - it drives the
       heatmap/dendrogram/MST/embedding figures and the post-hoc ARI-vs-GICS
       diagnostic ONLY. It is NOT a backtest and is NEVER applied out-of-sample.
     - The diversification horse race is a TRUE walk-forward backtest with NO
@@ -134,7 +134,7 @@ class ClusterAnalysis:
         was supplied). GICS NEVER enters the distance or ``k``-selection.
     diversification:
         The honest 1/N-vs-cluster horse race (clusters RE-FIT per walk-forward
-        train window — never the full-panel display labels), or ``None`` when not
+        train window - never the full-panel display labels), or ``None`` when not
         requested.
     stability:
         The rolling-window stability record, or ``None`` when not requested.
@@ -169,7 +169,7 @@ class ClusterAnalysis:
         """Return a plain, JSON-serializable summary ``dict`` of this analysis.
 
         Heavy matrices (correlation/distance/MST/embedding) are intentionally
-        omitted here — they belong in :func:`assemble_figures`. This is the scalar
+        omitted here - they belong in :func:`assemble_figures`. This is the scalar
         + cluster-membership summary the API ``summary`` block is built from.
         """
         clusters: dict[str, list[str]] = {}
@@ -271,14 +271,14 @@ def _cluster_universe(
     All fitting here is on the supplied (FULL) panel; this DISPLAY map drives the
     descriptive figures (heatmap/dendrogram/MST/embedding) and the post-hoc
     ARI-vs-GICS diagnostic ONLY. The diversification horse race never reuses these
-    labels OOS — it re-fits clusters inside each walk-forward train window (see
+    labels OOS - it re-fits clusters inside each walk-forward train window (see
     :func:`_run_diversification`).
 
     ``method`` selects the clustering family:
 
-    - ``"hierarchical"`` — agglomerative linkage on the Mantegna distance.
-    - ``"kmeans"`` — K-means on the RMT-signal embedding.
-    - ``"both"`` (default) — run BOTH and keep the higher-silhouette map as the
+    - ``"hierarchical"`` - agglomerative linkage on the Mantegna distance.
+    - ``"kmeans"`` - K-means on the RMT-signal embedding.
+    - ``"both"`` (default) - run BOTH and keep the higher-silhouette map as the
       canonical DISPLAY labeling; ``selection_method`` records that both ran and
       which family won.
     """
@@ -365,7 +365,7 @@ def run_cluster_analysis(
 
     Pipeline::
 
-        # DISPLAY map (full-panel, descriptive — NOT a backtest):
+        # DISPLAY map (full-panel, descriptive - NOT a backtest):
         correlation -> (RMT denoise) -> Mantegna distance -> gap/fixed k
         -> cluster -> MST + embedding + post-hoc metrics
         -> [optional] rolling stability (adjacent-window ARI; per-window re-fit)
@@ -379,7 +379,7 @@ def run_cluster_analysis(
         A wide panel of asset returns (rows = time, columns = asset). The DISPLAY
         cluster map is fit on this FULL panel for descriptive figures and the
         post-hoc ARI-vs-GICS diagnostic ONLY; the diversification horse race never
-        reuses it OOS — it re-fits clusters inside each walk-forward train window.
+        reuses it OOS - it re-fits clusters inside each walk-forward train window.
     params:
         The :class:`ClusterAnalysisParams` bundle (defaults to library defaults).
     gics:
@@ -496,7 +496,7 @@ def _run_diversification(
     """Run the honest horse race (TRAIN-ONLY cluster re-fit) + derive the verdict.
 
     The OOS horse race does NOT reuse ``result.labels`` (which were fit on the FULL
-    panel — fine for display, leaky as a backtest). Instead it builds a per-window
+    panel - fine for display, leaky as a backtest). Instead it builds a per-window
     clusterer that RE-FITS the correlation -> RMT -> distance -> cut pipeline inside
     each walk-forward train window, applying those train-only labels to the next OOS
     window with purge + embargo + ``shift(1)``. The clustering FAMILY (kmeans vs
@@ -576,7 +576,7 @@ def assemble_figures(analysis: ClusterAnalysis) -> dict[str, dict[str, Any] | No
 
     # The dendrogram visualizes the hierarchical linkage tree. When the headline
     # family is k-means (method="kmeans", or method="both" where k-means won the
-    # silhouette contest) the display ClusterResult carries no linkage — but the
+    # silhouette contest) the display ClusterResult carries no linkage - but the
     # dendrogram is a structural diagnostic of the SAME correlation hierarchy and
     # should still render. Fall back to an average-linkage tree on the display
     # distance matrix so the figure is never empty.

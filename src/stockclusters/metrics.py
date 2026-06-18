@@ -124,7 +124,7 @@ def cophenetic_correlation(linkage: np.ndarray, dist: MatrixLike) -> float:
     r"""Cophenetic correlation between a linkage tree and the original distances.
 
     Pearson correlation between the condensed original distances and the
-    cophenetic distances implied by ``linkage`` — a measure of how faithfully the
+    cophenetic distances implied by ``linkage`` - a measure of how faithfully the
     dendrogram preserves pairwise distances.
 
     PARITY REQUIREMENT: matches ``scipy.cluster.hierarchy.cophenet`` to ``1e-10``.
@@ -172,7 +172,7 @@ def modularity(labels: pd.Series, corr: MatrixLike) -> float:
     r"""Newman modularity of a labeling over a correlation-weighted graph.
 
     Treats the (thresholded, non-negative) correlation matrix as a weighted graph
-    and computes the modularity ``Q`` of the cluster partition — the fraction of
+    and computes the modularity ``Q`` of the cluster partition - the fraction of
     within-cluster edge weight minus its expectation under a degree-preserving
     null. Reported as an MST/network cross-check on the gap selection.
 

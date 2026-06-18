@@ -4,10 +4,10 @@ This subpackage turns a wide panel of asset log-returns into the inputs that the
 clustering stage consumes: a (optionally RMT-denoised) correlation matrix, and a
 Mantegna ultrametric-compatible distance matrix.
 
-- :mod:`stockclusters.correlation.estimate` — log-return correlation estimation.
-- :mod:`stockclusters.correlation.rmt` — Marchenko-Pastur eigenvalue clipping
+- :mod:`stockclusters.correlation.estimate` - log-return correlation estimation.
+- :mod:`stockclusters.correlation.rmt` - Marchenko-Pastur eigenvalue clipping
   (re-exported from the reused :mod:`stockclusters.estimators.rmt`).
-- :mod:`stockclusters.correlation.distance` — Mantegna distance
+- :mod:`stockclusters.correlation.distance` - Mantegna distance
   :math:`d_{ij} = \\sqrt{2(1 - \\rho_{ij})}` plus MST / subdominant-ultrametric
   helpers.
 

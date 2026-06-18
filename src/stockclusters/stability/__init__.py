@@ -5,9 +5,9 @@ adjacent-window labelings. The headline scalar is the mean adjacent-window
 Adjusted Rand Index (ARI); label alignment across windows (and birth/death of
 clusters when ``k`` changes) is handled by Hungarian / max-Jaccard matching.
 
-- :mod:`stockclusters.stability.resample` — rolling/resampled cluster re-fits.
-- :mod:`stockclusters.stability.ari` — adjacent-window ARI (headline scalar).
-- :mod:`stockclusters.stability.align` — cross-window label alignment.
+- :mod:`stockclusters.stability.resample` - rolling/resampled cluster re-fits.
+- :mod:`stockclusters.stability.ari` - adjacent-window ARI (headline scalar).
+- :mod:`stockclusters.stability.align` - cross-window label alignment.
 
 The frozen :class:`StabilityResult` is the common return bundle.
 

@@ -1,4 +1,4 @@
-"""Adjusted Rand Index — the headline cluster-stability scalar.
+"""Adjusted Rand Index - the headline cluster-stability scalar.
 
 The Adjusted Rand Index (ARI) measures agreement between two labelings, corrected
 for chance. The adjacent-window ARI (mean ARI between clusterings fit on
@@ -100,7 +100,7 @@ def adjacent_window_ari(window_labels: Sequence[pd.Series]) -> float:
     r"""Mean ARI between clusterings of consecutive windows (headline scalar).
 
     Given an ordered sequence of per-window label Series, computes the ARI between
-    each adjacent pair and returns their mean — the headline temporal-stability
+    each adjacent pair and returns their mean - the headline temporal-stability
     number.
 
     Parameters

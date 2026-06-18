@@ -171,7 +171,7 @@ def test_ari_vs_gics_perfect_and_orthogonal() -> None:
 
     # A GICS map that cuts across every cluster (4 clusters vs 3 cyclic sectors)
     # has no real agreement: the chance-corrected ARI is near zero (and may go
-    # slightly negative, i.e. worse than random) — well below any "agreement" bar.
+    # slightly negative, i.e. worse than random) - well below any "agreement" bar.
     orthogonal = {a: f"S{i % 3}" for i, a in enumerate(assets)}
     assert ari_vs_gics(labels, orthogonal) < 0.3
 

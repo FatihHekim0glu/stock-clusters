@@ -601,7 +601,7 @@ def test_compute_returns_no_lookahead_does_not_fill_gaps() -> None:
     """With an internal NaN, ``fill_method=None`` does NOT manufacture a 0 return.
 
     If prices were forward-filled before differencing, the row at the gap would read
-    0.0 and the row after it 0.21 — but ffill would also have leaked the stale price
+    0.0 and the row after it 0.21 - but ffill would also have leaked the stale price
     forward. With ``fill_method=None`` BOTH the gap row and the row immediately after
     stay NaN (no spurious 0 return is invented across the missing observation), which
     is the no-lookahead guarantee the docstring promises. The unaffected columns are
