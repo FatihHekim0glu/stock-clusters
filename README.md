@@ -1,16 +1,16 @@
 # stock-clusters
 
-Cluster an equity universe (e.g. the S&P 500) by its **correlation structure** —
-RMT-denoised, under the **Mantegna distance** `d = sqrt(2(1 - rho))` — to map its
+Cluster an equity universe (e.g. the S&P 500) by its **correlation structure**,
+RMT-denoised, under the **Mantegna distance** `d = sqrt(2(1 - rho))`, to map its
 diversification skeleton, and **honestly test** whether cluster-aware allocation
 beats naive 1/N out-of-sample after costs.
 
 **Live tool:** https://fatihhekimoglu.com/tools/stock-clusters _(hosted demo)_
 
 > **Honest headline (the correct result, not a bug):** correlation clusters mostly
-> re-discover GICS sectors (ARI ~0.4–0.7) and cluster-aware allocation does **not**
-> beat 1/N out-of-sample after costs (Jobson-Korkie-Memmel insignificant, deflated
-> Sharpe ~0). Diagnostic value only — no free alpha.
+> re-discover GICS sectors (ARI ~0.4 to 0.7) and cluster-aware allocation does **not**
+> beat 1/N out-of-sample after costs (the Sharpe-difference test is not significant
+> and the deflated Sharpe is ~0). Diagnostic value only, no free alpha.
 
 This is a pure, typed, src-layout compute library (`import stockclusters`) with zero
 import-time side effects, so the same functions back a local Typer CLI and a hosted
@@ -24,7 +24,7 @@ uv pip install -e ".[data,viz,dev]"
 uv run python -c "import stockclusters; print(stockclusters.__version__)"
 ```
 
-Optional extras (install only what you need — the hosted API ships `[data]` only to
+Optional extras (install only what you need; the hosted API ships `[data]` only to
 keep the scale-to-zero container lean):
 
 | Extra    | Pulls in                                              | For |
@@ -37,7 +37,7 @@ keep the scale-to-zero container lean):
 ## Quickstart
 
 The whole pipeline is one call. `run_cluster_analysis` fits the (RMT-denoised)
-correlation, builds the Mantegna distance, selects `k`, clusters, and — when asked —
+correlation, builds the Mantegna distance, selects `k`, clusters, and, when asked,
 runs the rolling-stability and 1/N-vs-cluster horse race; `assemble_figures` builds
 the Plotly figures. This is exactly what the hosted FastAPI router wraps.
 
@@ -86,7 +86,7 @@ public pipeline entrypoints the backend calls.
 - The deflated-Sharpe `n_trials` counts the **full swept grid** (clustering
   families × `k` candidates × cluster-aware weighting schemes (2) × denoise
   settings × cost grid).
-- GICS sectors are used **post-hoc only** — never in the distance or `k`-selection.
+- GICS sectors are used **post-hoc only**, never in the distance or `k`-selection.
 
 ## Validation table
 
@@ -113,7 +113,7 @@ honest null.
 | Seed determinism (phase null, K-means inertia, bootstrap CI)               | exact     | `tests/property/test_clustering_properties.py` |
 | Identical OOS date index across 1/N, cluster-EW, stripped-HRP              | exact     | `tests/property/test_stability_allocation.py` |
 | Recovery guard: `k_blocks` ARI vs truth ≥ pinned threshold                 | ≥ 0.8     | `tests/unit/test_metrics.py` |
-| Honest null: `pure_noise` → Memmel-JK insignificant, `DSR ≤ 0`             | locked    | `tests/regression/test_honest_headline.py`, `tests/regression/test_verdict_honest_null.py` |
+| Honest null: noise never over-claims, and the Sharpe-gap test stays calibrated near its 5% level | locked | `tests/regression/test_honest_headline.py`, `tests/regression/test_verdict_honest_null.py` |
 | RMT denoise-on/off ablation (ARI-vs-GICS + stability), reported honestly    | locked    | `tests/regression/test_rmt_ablation.py` |
 | DSR `n_trials ≥ product of all swept axes` (multiplicity guard)            | locked    | `tests/regression/test_verdict_honest_null.py` |
 | Plotly `{data, layout}` JSON: finite scalars, explicit `null` for absent figs | locked  | `tests/unit/test_plots.py` |
@@ -122,11 +122,11 @@ honest null.
 ## Honest headline
 
 The expected, literature-consistent result of running this tool on a real S&P 500
-window is **not** a trading edge — and the code is built so it cannot pretend
+window is **not** a trading edge, and the code is built so it cannot pretend
 otherwise:
 
 - **Clusters re-discover GICS sectors.** The correlation clusters line up with the
-  GICS sector taxonomy at an Adjusted Rand Index of roughly **0.4–0.7** (post-hoc;
+  GICS sector taxonomy at an Adjusted Rand Index of roughly **0.4 to 0.7** (post-hoc;
   GICS never enters the distance or `k`-selection). The map is real and useful as a
   *diagnostic* of the universe's diversification skeleton.
 - **Cluster-aware allocation does NOT beat 1/N out-of-sample after costs.** Across
@@ -141,20 +141,20 @@ otherwise:
 This is the correct finding, not a bug. The verdict is a **pure function** of the
 inference outputs (`derive_clustering_verdict`), so it is structurally incapable of
 printing "clusters beat 1/N" while the test is insignificant or the deflated Sharpe
-is non-positive — the truth table is unit-tested and the `pure_noise` null is a
-locked regression. The value here is diagnostic clarity, not free alpha.
+is non-positive. The truth table is unit-tested and the honest null is a locked
+regression. The value here is diagnostic clarity, not free alpha.
 
 ## Design decisions
 
 See `docs/decisions/` for the ADRs:
 
-- [ADR-0001](docs/decisions/0001-rmt-denoise-before-cluster.md) — RMT-denoise before clustering
-- [ADR-0002](docs/decisions/0002-mantegna-metric.md) — the Mantegna `sqrt(2(1 - rho))` metric
-- [ADR-0003](docs/decisions/0003-gap-vs-phase-null.md) — gap statistic vs a phase-randomized null
-- [ADR-0004](docs/decisions/0004-honest-1overN-null.md) — the honest 1/N null and pure-function verdict
-- [ADR-0005](docs/decisions/0005-k-selection-decision-rule.md) — Tibshirani 1-SE `k`-selection rule
-- [ADR-0006](docs/decisions/0006-dsr-multiplicity.md) — DSR `n_trials` counts the full grid
+- [ADR-0001](docs/decisions/0001-rmt-denoise-before-cluster.md): RMT-denoise before clustering
+- [ADR-0002](docs/decisions/0002-mantegna-metric.md): the Mantegna `sqrt(2(1 - rho))` metric
+- [ADR-0003](docs/decisions/0003-gap-vs-phase-null.md): gap statistic vs a phase-randomized null
+- [ADR-0004](docs/decisions/0004-honest-1overN-null.md): the honest 1/N null and pure-function verdict
+- [ADR-0005](docs/decisions/0005-k-selection-decision-rule.md): Tibshirani 1-SE `k`-selection rule
+- [ADR-0006](docs/decisions/0006-dsr-multiplicity.md): DSR `n_trials` counts the full grid
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

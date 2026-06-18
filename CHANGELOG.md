@@ -19,16 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`marchenko_pastur_clip`), covariance estimators, walk-forward purge/embargo
   backtest, DSR/PSR, and Jobson-Korkie-Memmel machinery.
 - Clustering subpackages:
-  - `correlation` — log-return correlation, RMT denoise, Mantegna distance
+  - `correlation`: log-return correlation, RMT denoise, Mantegna distance
     `sqrt(2(1 - rho))` (a true metric), MST + subdominant ultrametric.
-  - `clustering` — hierarchical (average/ward/single), RMT-signal embedding,
+  - `clustering`: hierarchical (average/ward/single), RMT-signal embedding,
     K-means on the embedding, gap-statistic `k`-selection vs a phase-randomized
     null (Tibshirani 1-SE rule); frozen `ClusterResult` / `GapResult`.
-  - `stability` — rolling re-fit, adjacent-window ARI, Hungarian/max-Jaccard label
+  - `stability`: rolling re-fit, adjacent-window ARI, Hungarian/max-Jaccard label
     alignment; frozen `StabilityResult`.
-  - `allocation` — 1/N, cluster-equal-weight, stripped-HRP, plus the no-lookahead
+  - `allocation`: 1/N, cluster-equal-weight, stripped-HRP, plus the no-lookahead
     diversification horse race; frozen `DiversificationResult`.
-  - `evaluation` — clustering `ClusteringVerdict` (pure function over Memmel-JK p +
+  - `evaluation`: clustering `ClusteringVerdict` (pure function over Memmel-JK p +
     DSR), so the headline cannot claim "beats 1/N" while the test is insignificant.
   - `metrics`, `plots` (lazy Plotly), `cli` (lazy Typer), `data` /
     `data_providers` (yfinance→Stooq→Polygon→synthetic loader chain).
