@@ -8,7 +8,7 @@
 ## Context
 
 Clustering, the minimum spanning tree (MST), and the subdominant ultrametric all
-behave sensibly only on a **proper metric** — non-negative, zero iff the points
+behave sensibly only on a **proper metric**, non-negative, zero iff the points
 coincide, symmetric, and obeying the triangle inequality. The distance is derived
 from the (RMT-denoised) correlation `rho_ij`.
 
@@ -39,8 +39,8 @@ and the subdominant ultrametric. The `1 - rho` and `1 - |rho|` forms are
 **rejected** and never used anywhere in the codebase.
 
 The line carries an inline `HONESTY-REQUIREMENT` comment naming the two footguns.
-The metric axioms — non-negativity, zero diagonal, symmetry, and the triangle
-inequality — are asserted with a **Hypothesis property test**, and the exact values
+The metric axioms, non-negativity, zero diagonal, symmetry, and the triangle
+inequality, are asserted with a **Hypothesis property test**, and the exact values
 at `rho in {-1, 0, +1}` are pinned by a unit test. K-means does **not** run on this
 distance (K-means assumes Euclidean coordinates); it runs on the RMT-signal
 *embedding* instead (see ADR-0005), with the distance reserved for the
@@ -52,7 +52,7 @@ hierarchical/MST path.
   dendrogram leaf order and the network backbone are well-defined and match the
   reference oracles (scipy linkage/cophenet to 1e-10).
 - **Positive.** Anti-correlated pairs are placed far apart (`d = 2`), which is the
-  correct geometry for a *diversification* skeleton — the opposite of what
+  correct geometry for a *diversification* skeleton, the opposite of what
   `1 - |rho|` would do.
 - **Positive.** The single most common silent correlation-clustering bug
   (`1 - rho`) is caught by a property test and a visible comment rather than

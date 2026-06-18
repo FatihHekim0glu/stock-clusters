@@ -47,7 +47,7 @@ FastAPI container.
 ## Commit hygiene
 
 - Use clear, present-tense commit messages.
-- **Do not** add AI-attribution trailers — no `Co-Authored-By: Claude`,
+- **Do not** add AI-attribution trailers, no `Co-Authored-By: Claude`,
   no "Generated with Claude", no robot-emoji attribution lines. The
   `.github/workflows/no-ai-attribution.yml` guard fails any PR that contains them.
 

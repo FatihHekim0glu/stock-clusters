@@ -9,7 +9,7 @@
 
 The gap statistic (ADR-0003) gives a `gap(k)` curve and a standard error `s_k` at
 each candidate `k`. A curve still needs a **rule** to turn it into a single chosen
-`k`. The naive `argmax_k gap(k)` is noisy — it chases the sampling fluctuation in
+`k`. The naive `argmax_k gap(k)` is noisy, it chases the sampling fluctuation in
 the reference draws and tends to pick a larger `k` than warranted.
 
 There are several reported cross-checks (silhouette, MST/Newman modularity) that

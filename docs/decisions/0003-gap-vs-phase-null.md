@@ -18,7 +18,7 @@ Everything hinges on *which null*. The textbook default is a uniform box drawn o
 the data's bounding range (or its principal-component box). For **financial
 returns** that null is wrong: it destroys not only cross-asset correlation (which we
 want gone) but also each asset's own autocorrelation, fat tails, and volatility
-clustering — so the reference is "too easy", the gap is inflated, and the procedure
+clustering, so the reference is "too easy", the gap is inflated, and the procedure
 over-splits.
 
 The honest null must preserve each asset's marginal dynamics while destroying only
@@ -32,8 +32,8 @@ surrogate) null** (`clustering/selection.py:phase_randomize`):
 - each asset's return series is independently Fourier-transformed, its phases are
   replaced by uniform random phases (conjugate-symmetric, so the surrogate is
   real), and inverse-transformed;
-- this **preserves each asset's amplitude spectrum** — hence its autocorrelation,
-  marginal variance, and (approximately) its spectral fingerprint — while
+- this **preserves each asset's amplitude spectrum**, hence its autocorrelation,
+  marginal variance, and (approximately) its spectral fingerprint, while
   **destroying cross-asset correlation**.
 
 The reference `E*[log W_k]` and its standard error `s_k` are averaged over `B`
@@ -43,15 +43,15 @@ Every evaluated `k` candidate is a swept DSR axis and is recorded on `GapResult`
 A **uniform-box null is retained only as a code-path validator**: the gap machinery
 (`W_k`, `log`-gap, `s_k`) is parity-checked against a reference implementation on a
 fixed surrogate set, and the gap-on-uniform-null is checked to 1e-6 against a
-reference — but the uniform null is **never** used to select `k`.
+reference, but the uniform null is **never** used to select `k`.
 
 ## Consequences
 
 - **Positive.** The null has realistic single-asset dynamics, so the gap is not
   inflated by autocorrelation/fat-tails and `k` is not systematically over-split.
 - **Positive.** Reproducible: phases are drawn from a seeded PCG64 generator, so a
-  fixed seed reproduces the surrogate (and the selected `k`) byte-for-byte —
-  property-tested.
+  fixed seed reproduces the surrogate (and the selected `k`) byte-for-byte, and
+  this is property-tested.
 - **Positive.** The gap code path is still validated against the classical uniform
   null, so a bug in `W_k`/`s_k` is caught without contaminating the selector.
 - **Cost.** `B` FFT surrogates × `k` candidates clusterings per fit; bounded by the
