@@ -17,8 +17,8 @@ multiplicity-adjusted margin.
 A research tool earns trust by being **structurally incapable of over-claiming**.
 It is not enough to "try to report honestly", a narration step can always drift.
 The verdict must be a deterministic function of the inference outputs, so a
-non-significant test or a deflated-to-zero Sharpe *mechanically* blocks a
-"beats 1/N" headline.
+non-significant test or a deflated Sharpe that does not clear the `1 - alpha = 0.95`
+confidence gate *mechanically* blocks a "beats 1/N" headline.
 
 ## Decision
 
@@ -35,10 +35,11 @@ guarantees:
    deflated_sharpe, sharpe_diff)` returns one of `clusters_beat_1n`,
    `clusters_lose_to_1n`, or `no_significant_difference` from a fixed truth table.
    It returns `clusters_beat_1n` **only if** the JKM test is significant
-   (`p < alpha`) **and** the deflated Sharpe is strictly positive. The truth table
-   is unit-tested, and a regression test asserts that the **pure-noise** fixture
-   yields a non-significant JKM `p` and `DSR <= 0` (hence
-   `no_significant_difference`).
+   (`p < alpha`) **and** the deflated Sharpe clears the `1 - alpha = 0.95`
+   confidence threshold (the DSR is a probability/CDF in `[0, 1]`; the gate fails if
+   `DSR <= 0.95`). The truth table is unit-tested, and a regression test asserts
+   that the **pure-noise** fixture yields a non-significant JKM `p` and a DSR that
+   does not clear the `0.95` gate (hence `no_significant_difference`).
 
 The README states the expected, literature-consistent outcome up front: clusters
 re-discover GICS sectors (ARI ~0.4-0.7) and cluster-aware allocation does **not**
@@ -47,7 +48,8 @@ beat 1/N after costs.
 ## Consequences
 
 - **Positive.** The headline cannot drift away from the evidence: a lucky point
-  estimate with an insignificant test or a zero DSR can never print "beats 1/N".
+  estimate with an insignificant test or a DSR below the `0.95` confidence gate can
+  never print "beats 1/N".
 - **Positive.** The honest null is a *feature*, the tool's value is diagnostic (a
   map of the diversification skeleton), not a false alpha claim.
 - **Positive.** Because the comparison is on an identical OOS index, a Sharpe gap

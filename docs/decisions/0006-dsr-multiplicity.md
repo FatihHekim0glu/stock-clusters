@@ -62,13 +62,14 @@ the multiplicity is visible to the reader, not buried.
 
 - **Positive.** The "winning" Sharpe found by exploring families × `k` × schemes ×
   denoise × costs is correctly deflated. With the full grid counted, the
-  cluster-vs-1/N DSR lands near zero, the honest finding (ADR-0004), rather than a
-  spuriously significant one.
+  cluster-vs-1/N DSR does not clear the `1 - alpha = 0.95` confidence gate, the
+  honest finding (ADR-0004), rather than a spuriously significant one.
 - **Positive.** Every other ADR that *adds* an axis (a clustering family via
   `method="both"`, a wider `k` range, a denoise comparison) does so knowing it
   raises `n_trials`. The cost of exploration is paid in the right place.
 - **Positive.** Because the verdict is a pure function of the JKM `p`-value and the
-  DSR (ADR-0004), a deflated-to-zero DSR mechanically blocks an over-claim.
+  DSR (ADR-0004), a DSR that does not clear the `1 - alpha = 0.95` confidence gate
+  mechanically blocks an over-claim.
 - **Cost.** The verdict is conservative: a genuine small edge could be deflated
   below significance. We accept this, for a benchmark whose purpose is honesty, a
   false "no edge" is far cheaper than a false "clusters beat 1/N".

@@ -10,7 +10,8 @@ Covers the invariants the brief pins for this layer:
 - Allocation schemes return non-negative simplex weights; stripped-HRP is
   inverse-variance within cluster and equal across clusters.
 - The verdict is a pure, honest function: it cannot return "beat" when the
-  Memmel-JK p-value is insignificant or the deflated Sharpe is non-positive.
+  Memmel-JK p-value is insignificant or the deflated Sharpe fails to clear the
+  ``1 - alpha = 0.95`` confidence gate (the DSR is a CDF in ``[0, 1]``).
 """
 
 from __future__ import annotations
@@ -158,9 +159,14 @@ def test_stripped_hrp_is_inverse_variance_within_equal_across(
 )
 @settings(max_examples=300, deadline=None)
 def test_verdict_cannot_beat_without_evidence(p: float, dsr: float, diff: float) -> None:
-    """The verdict NEVER claims "beat" while p is insignificant or DSR <= 0."""
+    """The verdict NEVER claims "beat" unless p is significant AND the DSR clears 0.95.
+
+    The DSR is a probability/CDF in ``[0, 1]``; the gate is the portfolio-standard
+    ``1 - alpha = 0.95`` confidence threshold (DSR fails if ``deflated_sharpe <=
+    0.95``).
+    """
     verdict = derive_clustering_verdict(p, dsr, diff)
-    if p >= 0.05 or dsr <= 0.0:
+    if p >= 0.05 or dsr <= 0.95:
         assert verdict is ClusteringVerdict.NO_SIGNIFICANT_DIFFERENCE
     elif diff > 0:
         assert verdict is ClusteringVerdict.CLUSTERS_BEAT_1N
@@ -168,7 +174,7 @@ def test_verdict_cannot_beat_without_evidence(p: float, dsr: float, diff: float)
         assert verdict is ClusteringVerdict.CLUSTERS_LOSE_TO_1N
     # The forbidden state, stated directly.
     if verdict is ClusteringVerdict.CLUSTERS_BEAT_1N:
-        assert p < 0.05 and dsr > 0.0 and diff > 0.0
+        assert p < 0.05 and dsr > 0.95 and diff > 0.0
 
 
 # --------------------------------------------------------------------------- #

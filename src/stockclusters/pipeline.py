@@ -18,7 +18,7 @@ horse race) and the :class:`~stockclusters.stability.resample.StabilityResult`
 The headline verdict is a PURE function of the diversification inference outputs
 (:func:`~stockclusters.evaluation.verdict.derive_clustering_verdict`); it cannot
 read "clusters beat 1/N" while the Memmel-JK test is insignificant or the deflated
-Sharpe is non-positive.
+Sharpe fails to clear the ``1 - alpha = 0.95`` confidence gate.
 
 HONESTY / LEAKAGE DISCIPLINE - what is fit on what
     - The DISPLAY cluster map (the ``ClusterResult`` carried on the bundle) is fit

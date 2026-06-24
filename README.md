@@ -10,7 +10,8 @@ beats naive 1/N out-of-sample after costs.
 > **Honest headline (the correct result, not a bug):** correlation clusters mostly
 > re-discover GICS sectors (ARI ~0.4 to 0.7) and cluster-aware allocation does **not**
 > beat 1/N out-of-sample after costs (the Sharpe-difference test is not significant
-> and the deflated Sharpe is ~0). Diagnostic value only, no free alpha.
+> and the deflated Sharpe does not clear the `1 - alpha = 0.95` confidence gate).
+> Diagnostic value only, no free alpha.
 
 This is a pure, typed, src-layout compute library (`import stockclusters`) with zero
 import-time side effects, so the same functions back a local Typer CLI and a hosted
@@ -135,13 +136,16 @@ otherwise:
   look-ahead), the best cluster-aware Sharpe minus the 1/N Sharpe is **not
   statistically
   significant** (Jobson-Korkie-Memmel `p` not significant) and the **deflated Sharpe
-  is ~0** once the trial count is honestly accounted for. The headline verdict
-  resolves to `no_significant_difference`.
+  does not clear the `1 - alpha = 0.95` confidence gate** once the trial count is
+  honestly accounted for. The headline verdict resolves to
+  `no_significant_difference`.
 
 This is the correct finding, not a bug. The verdict is a **pure function** of the
 inference outputs (`derive_clustering_verdict`), so it is structurally incapable of
 printing "clusters beat 1/N" while the test is insignificant or the deflated Sharpe
-is non-positive. The truth table is unit-tested and the honest null is a locked
+fails to clear the `1 - alpha = 0.95` confidence threshold (the DSR is a
+probability/CDF in `[0, 1]`; the gate fails if `deflated_sharpe <= 0.95`). The truth
+table is unit-tested and the honest null is a locked
 regression. The value here is diagnostic clarity, not free alpha.
 
 ## Design decisions
