@@ -126,6 +126,65 @@ def test_pure_noise_single_draw_verdict_is_consistent() -> None:
         assert verdict is ClusteringVerdict.NO_SIGNIFICANT_DIFFERENCE
 
 
+def _hrp_favoring_panel(seed: int, *, n_obs: int = 750) -> pd.DataFrame:
+    """A panel where the cluster-aware allocation GENUINELY beats 1/N.
+
+    Two real blocks with very different risk: a large 8-asset high-volatility
+    "junk" block and a small 2-asset low-volatility steady-drift block. Naive 1/N
+    pours equal capital into every name and is dominated by the junk block; the
+    cluster-aware allocators (cluster-EW and stripped-HRP) give the good block a
+    full cluster-level risk budget, so their OOS Sharpe genuinely exceeds 1/N's.
+    This is the POSITIVE CONTROL for the honest-null guard: structure exists, so
+    the verdict gate is allowed to fire.
+    """
+    gen = make_rng(seed)
+    index = pd.date_range("2017-01-01", periods=n_obs, freq="B")
+    cols = [f"H{i:02d}" for i in range(10)]
+    data = np.zeros((n_obs, 10))
+    fac_junk = gen.standard_normal(n_obs)
+    fac_good = gen.standard_normal(n_obs)
+    for j in range(8):  # high-vol, near-zero-drift junk block
+        data[:, j] = 0.00005 + 0.020 * fac_junk + gen.standard_normal(n_obs) * 0.010
+    for j in range(8, 10):  # low-vol, steady positive-drift good block
+        data[:, j] = 0.0010 + 0.004 * fac_good + gen.standard_normal(n_obs) * 0.002
+    return pd.DataFrame(data, index=index, columns=cols)
+
+
+@pytest.mark.regression
+def test_positive_control_clusters_genuinely_beat_one_over_n() -> None:
+    """POSITIVE CONTROL: when clustering GENUINELY beats 1/N, the verdict fires.
+
+    The honest-null guards above prove the gate cannot over-claim on noise; this
+    proves the gate is not vacuously stuck on ``NO_SIGNIFICANT_DIFFERENCE`` either.
+    On a panel with real two-block risk structure (a deterministic seed chosen so
+    every gate clears) the FULL conjunction holds end-to-end through
+    ``run_diversification`` -> ``derive_clustering_verdict``:
+
+    - the Memmel-JK Sharpe-gap test is significant (``p < alpha``);
+    - the deflated Sharpe clears the ``0.95`` confidence threshold using the REAL
+      cross-trial variance computed inside ``run_diversification`` (NOT the V=0.0
+      bug that would inflate it); and
+    - the cluster-minus-1/N gap is positive.
+
+    so the verdict is ``CLUSTERS_BEAT_1N``.
+    """
+    panel = _hrp_favoring_panel(seed=3)
+    cols = list(panel.columns)
+    labels = pd.Series([0] * 8 + [1] * 2, index=cols, dtype=int)
+
+    res = run_diversification(panel, labels, lookback_window=150, n_trials=3, cost_bps=1.0)
+
+    # Each gate clears honestly (the DSR clears 0.95 on the REAL V, not on V=0.0).
+    assert res.memmel_jk_pvalue < _ALPHA
+    assert res.deflated_sharpe > 0.95
+    assert res.sharpe_diff_vs_1overN > 0.0
+
+    verdict = derive_clustering_verdict(
+        res.memmel_jk_pvalue, res.deflated_sharpe, res.sharpe_diff_vs_1overN
+    )
+    assert verdict is ClusteringVerdict.CLUSTERS_BEAT_1N
+
+
 @pytest.mark.regression
 def test_verdict_truth_table_honest() -> None:
     """The verdict truth table: 'beat' requires significance AND positive DSR."""
